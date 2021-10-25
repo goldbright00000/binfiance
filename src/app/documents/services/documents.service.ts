@@ -82,9 +82,11 @@ export class DocumentsService {
       return this.http.delete<any>(this.apiUrl + 'delete/document/' + doc.id);
     }
 
-    upload(filelist: FileList): Observable<any[]> {
+    upload(filelist:any): Observable<any[]> {
+      console.log(filelist.name)
       const formData = new FormData();
-      let file = filelist[0];
+      let file = filelist;
+      console.log(file.name)
       formData.append('file', file);
       formData.append('filename', file.name);
 

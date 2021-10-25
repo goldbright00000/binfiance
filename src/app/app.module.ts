@@ -11,7 +11,11 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { ToastrModule } from 'ngx-toastr';
 import { HotToastModule } from '@ngneat/hot-toast';
 import { AngularFireModule } from '@angular/fire';
+import { DragDropFileUploadDirective } from './drag-drop-file-upload.directive';
+import { ReactiveFormsModule } from '@angular/forms';
  
+
+
 const fConfig = {
   apiKey: "AIzaSyB4uS77ioilUB_3NNYlLrRJsOr0srjAu-4",
   authDomain: "booncloud.firebaseapp.com",
@@ -25,6 +29,7 @@ const fConfig = {
 @NgModule({
   declarations: [
     AppComponent,
+    DragDropFileUploadDirective,
   ],
   imports: [
     BrowserModule,
@@ -34,6 +39,8 @@ const fConfig = {
     BrowserAnimationsModule,
     AngularFireModule.initializeApp(fConfig),
     HotToastModule.forRoot(),
+    ReactiveFormsModule
+    
   ],
   providers: [
     { provide: NG_ENTITY_SERVICE_CONFIG, useValue: { baseUrl: 'https://jsonplaceholder.typicode.com' }}

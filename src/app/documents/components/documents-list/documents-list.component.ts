@@ -12,6 +12,7 @@ import { HotToastService } from '@ngneat/hot-toast';
 import { AuthStore } from 'src/app/home/state/auth.store';
 import { User } from 'src/app/home/services/auth.service';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { DomSanitizer } from '@angular/platform-browser';
 
 
 @Component({
@@ -66,9 +67,19 @@ export class DocumentsListComponent implements OnInit {
   };
 
   filtersForm: FormGroup;
-
+  @ViewChild('fileField') attachment;
 @ViewChild('successTemplate') successTemplate: any;
 @ViewChild('errorTemplate') errorTemplate: any;
+
+
+
+//Multiple File Upload Module
+fileArr:any[] = [];
+imgArr:string[] = [];
+fileObj:any[] = [];
+form: FormGroup;
+fileUpload:boolean=false;
+//Multiple File Upload Module
 
   constructor(
     private authStore: AuthStore,
@@ -78,8 +89,13 @@ export class DocumentsListComponent implements OnInit {
     private documentStore: DocumentStore,
     private documentQuery: DocumentQuery,
     private changeDetector: ChangeDetectorRef,
-    private fb: FormBuilder 
-  ) { }
+    private fb: FormBuilder ,
+    private sanitizer: DomSanitizer,
+  ) { 
+    this.form = this.fb.group({
+      avatar: [null]
+    })
+  }
 
   ngOnInit(): void {
     this.selectedDoc = null;
@@ -286,10 +302,124 @@ export class DocumentsListComponent implements OnInit {
     this.fileName = file[0].name;
   }
 
-  submitFile(): any {
-    this.fileLoading = true;
+
+  //Multiple File Upload Module
+  upload(e:any) {
+
+    
+  this.fileUpload=true;
+    
+    if(e.files == undefined){
+      e = e;
+    }
+     if(e.files != undefined){
+       
+      e = e.files
+    }
+
+    if(e.length >10){
+      console.log('max limit reached,Please attach files upto 10')
+      return
+    }
+    
+    
+    if(this.fileArr.length + e.length <=10){
+    
+    const fileListAsArray = Array.from(e);
  
-    this.documentsService.upload(this.fileToUpload).pipe(this.toastr.observe(
+    fileListAsArray.forEach((item:any, i) => {
+      const file:any = (e as HTMLInputElement);
+      const url = URL.createObjectURL(file[i]);
+      this.imgArr.push(url);
+      this.fileArr.push({ item, url: url });
+    })
+
+   
+   
+    this.fileArr.forEach((item:any) => {
+      this.fileObj.push(item.item)
+    })
+
+   
+
+  }
+
+  else{
+    console.log('max limit reached,Please attach files upto 10')
+      return
+  }
+
+    // Set files form control
+
+    // this.form.patchValue({
+    //   avatar: this.fileObj
+    // })
+
+    //this.form.get('avatar').updateValueAndValidity()
+
+    // Upload to server
+    // this.dragdropService.addFiles(this.form.value.avatar)
+    //   .subscribe((event:any) => {
+    //     switch (event.type) {
+    //       case HttpEventType.Sent:
+    //         console.log('Request has been made!');
+    //         break;
+    //       case HttpEventType.ResponseHeader:
+    //         console.log('Response header has been received!');
+    //         break;
+    //       case HttpEventType.UploadProgress:
+    //         this.progress = Math.round(event.loaded / event.total * 100);
+    //         console.log(`Uploaded! ${this.progress}%`);
+    //         break;
+    //       case HttpEventType.Response:
+    //         console.log('File uploaded successfully!', event.body);
+    //         setTimeout(() => {
+    //           this.progress = 0;
+    //           this.fileArr = [];
+    //           this.fileObj = [];
+    //           this.msg = "File uploaded successfully!"
+    //         }, 3000);
+    //     }
+    //   })
+  }
+//Delete From Multiple Files
+removeSelectedFile(index:any) {
+  console.log('chala')
+  // Delete the item from fileNames list
+  this.fileObj.splice(index, 1);
+  // delete file from FileList
+  this.fileArr.splice(index, 1);
+
+  if(this.fileArr.length == 0){
+   
+    this.attachment.nativeElement.value ='' ;
+    this.fileUpload=false;
+  }
+  
+
+ }
+
+
+  // Clean Url
+  sanitize(url: string) {
+    return this.sanitizer.bypassSecurityTrustUrl(url);
+  }
+ //Multiple File Upload Module
+
+
+  submitFile(){
+    
+    
+
+    for(let a=0;a<this.fileObj.length;a++){
+      this.fileLoading = true;
+
+      this.fileToUpload = this.fileObj[a];
+    this.fileName = this.fileObj[a].name;
+
+
+
+    this.documentsService.upload(this.fileObj[a]).pipe(this.toastr.observe(
       {
         loading: 'Processing the document, this may take a few moments.',
         success: this.successTemplate,
@@ -338,8 +468,17 @@ export class DocumentsListComponent implements OnInit {
           }
           this.fileLoading = false;
         }
-        this.fileName = null;
-        this.fileToUpload = null;
+        // this.fileName = null;
+        // this.fileToUpload = null;
+
+        this.fileObj.splice(a, 1);
+        // delete file from FileList
+        this.fileArr.splice(a, 1);
+      
+        if(this.fileArr.length == 0){
+          this.attachment.nativeElement.value ='' ;
+        }
+
       },
       (e) => {
       
@@ -348,15 +487,29 @@ export class DocumentsListComponent implements OnInit {
           duration: 10000
         });
 
-
+  
         this.fileName = null;
         this.fileToUpload = null;
         this.fileLoading = false;
+
         setTimeout( () => {
           location.reload();
         }, 1500)
       }
     );
+
+    }
+    this.fileUpload=false;
+  
+  }
+
+  uploadModal(template: TemplateRef<any>): void {
+    
+    const config = {
+      animated: true,
+      class: 'modal-xl modal-fixed-footer'
+    };
+    this.modalRef = this.modalService.show(template, config);
   }
 
   deleteDocumentFromStore(id: number): any {
